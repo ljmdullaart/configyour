@@ -1,0 +1,114 @@
+#!/bin/bash
+#INSTALL@ /usr/local/bin/configyour.pgm
+
+banner pgm >> Makefile
+
+grep '^#INSTALL@' * 2>/dev/null  | tr ':' ' ' | 
+while read FILE INSTALLAT DEST ; do
+	echo "$INSTALLAT : copy $FILE to $DEST"
+done
+
+
+NOW=`date`
+
+echo "tag/upload.pgm: |tag" >> Makefile
+echo "	touch tag/upload.pgm" >> Makefile
+echo "tag/pgm: tag/pgm.cron tag/pgm.bin |tag" >> Makefile
+
+CRONS=`ls *.cron 2>/dev/null | paste -s -d' '`
+PGMS=`grep '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' '`
+PGMSRC=`grep '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' '`
+
+if [ "$PGMS" = "" ] ; then
+	echo "No programs found to install"
+	echo "tag/pgm.bin: Makefile |tag" >> Makefile
+	echo "	touch tag/pgm.bin" >> Makefile
+
+else
+	echo "tag/pgm.bin: $PGMS |tag" >> Makefile
+	echo "	touch tag/pgm.bin" >> Makefile
+	echo "" >> Makefile
+	
+	
+	for FILE in $PGMSRC ; do
+		sed -n 's/^#INSTALL@ *//p' $FILE | grep -v @ |
+		while read DEST ; do
+			echo -n "$DEST: $FILE  Makefile " >> Makefile
+			if grep '^#DEP' $FILE ; then
+				sed -n 's/^#DEP[A-Z]* *//p' | paste -s -d' '  >> Makefile
+			else
+				echo "" >> Makefile
+			fi
+			echo "	sudo cp $FILE $DEST" >>Makefile
+			case $FILE in
+				(*.sh) DO_CHMOD=yes ;;
+				(*.pl) DO_CHMOD=yes ;;
+				(*.tcl) DO_CHMOD=yes ;;
+				(*) DO_CHMOD=no ;;
+			esac
+			if [ $DO_CHMOD = yes ] ; then
+				echo "	sudo chmod a+rx $DEST" >> Makefile
+			fi
+			if grep '^#MAKERULE' $FILE ; then
+				sed -n 's/^#MAKERULE[ 	]*/	/p'  >> Makefile
+			fi
+		done
+	done
+fi
+
+# Depricated  crontab-only
+if [ -f crontab ] ; then
+cat >>Makefile <<EOF
+crontab.lst: crontab
+	sudo crontab crontab
+	sudo crontab -l > crontab.lst
+
+EOF
+fi
+	
+	
+if [ "$CRONS" = "" ] ; then
+	echo "tag/pgm.cron: Makefile |tag">> Makefile
+	echo "	touch tag/pgm.cron" >> Makefile
+else
+	for FILE in $CRONS ; do
+		USER=root
+		grep '^#USER' $FILE | while read TAG USER ; do :; done
+		if [ "$USER" = "" ] ; then user=ROOT ; fi
+		echo "$FILE.lst: $FILE"  >>Makefile
+		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
+		echo "	awk '{printf(\"%-100s  #--$FILE:$USER\\n\", \$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
+		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
+		echo "	sudo rm -f /tmp/cr-$USER"                                                            >>Makefile
+		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
+	done
+	echo -n "tag/pgm.cron: Makefile ">> Makefile
+	for FILE in $CRONS ; do
+		echo -n " $FILE.lst">> Makefile
+	done
+	echo " |tag">> Makefile
+	echo "	touch tag/pgm.cron" >> Makefile
+fi
+
+
+echo 'tag/clean.pgm:' >> Makefile
+if [ "$PGMS" = "" ] ; then
+	echo "No pgms to cleanup"
+else
+	echo "	sudo rm -f $PGMS" >> Makefile
+fi
+if [ "$CRONS" = "" ] ; then
+	echo "No crons to clean-up"
+else
+	for FILE in $CRONS ; do
+		USER=root
+		grep '^#USER' $FILE | while read TAG USER ; do :; done
+		if [ "$USER" = "" ] ; then user=ROOT ; fi
+		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
+		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
+		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
+	done
+	$NOCLEAN=0
+fi
+echo '	touch tag/clean.pgm' >> Makefile
+			
