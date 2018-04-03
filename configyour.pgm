@@ -3,7 +3,7 @@
 
 banner pgm >> Makefile
 
-grep '^#INSTALL@' * 2>/dev/null  | tr ':' ' ' | 
+grep '^#INSTALL@' * 2>/dev/null  | tr ':' ' ' | grep -v ~|
 while read FILE INSTALLAT DEST ; do
 	echo "$INSTALLAT : copy $FILE to $DEST"
 done
@@ -77,7 +77,7 @@ else
 		if [ "$USER" = "" ] ; then user=ROOT ; fi
 		echo "$FILE.lst: $FILE"  >>Makefile
 		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
-		echo "	awk '{printf(\"%-100s  #--$FILE:$USER\\n\", \$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
+		echo "	awk '{printf(\"%-100s  #--$FILE:$USER\\n\", \$\$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
 		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
 		echo "	sudo rm -f /tmp/cr-$USER"                                                            >>Makefile
 		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
@@ -108,7 +108,7 @@ else
 		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
 		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
 	done
-	$NOCLEAN=0
+	NOCLEAN=0
 fi
 echo '	touch tag/clean.pgm' >> Makefile
 			
