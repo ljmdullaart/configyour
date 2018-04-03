@@ -93,4 +93,4 @@ if [ -f Makefile.part ] ; then
 fi
 			
 #cat Makefile
-
+rm -f $CONFIGURES
