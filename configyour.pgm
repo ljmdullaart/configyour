@@ -43,6 +43,7 @@ else
 			case $FILE in
 				(*.sh) DO_CHMOD=yes ;;
 				(*.pl) DO_CHMOD=yes ;;
+				(*.py) DO_CHMOD=yes ;;
 				(*.tcl) DO_CHMOD=yes ;;
 				(*) DO_CHMOD=no ;;
 			esac
