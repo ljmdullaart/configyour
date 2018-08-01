@@ -1,0 +1,18 @@
+.header
+
+.h1 Intro
+
+Most of us have sets of scripts or sources that need to be
+installed on the system. This is often done via Makefiles or install scripts.
+On my system, I noticed that these Makefiles follow  more or less the same
+pattern. It is therefore logical to create a script that generates these
+Makefiles.
+
+
+Configyour does this.
+
+Although the configyour script is extensible and provides a framework,
+it is still meant for simple sets or scripts or simple generation of 
+Makefiles. When you need something a bit more sophisticated, don't use
+configyour.
+

@@ -1,0 +1,79 @@
+.header
+.h1 Configyour main script
+
+
+.h2 Help text
+
+If you do a 
+.fix configyour -h
+the following text appears:
+
+.pre
+Configyour creates a Makefile that seems most appropriate for this directory.
+
+- If a local "configure" script is present, that is probably the best way
+- Otherwise, all configyour.feature scripts in /usr/local/bin are used to generate a Makefile.
+
+If the sub-configyour are used, the following standard targets should
+be available in the makefile:
+
+- ALL (default target)
+- clean
+
+Current sub-configures are:
+htmlindex
+in
+pgm
+photoswipe
+.pre
+
+Sub-configures are called features.
+
+.h2 Adding plugins
+
+A plugin is a script named 
+.fix configyour.feature
+that creates the appropriate Makefile rules and adds them to the Makefile. 
+The framework will create a number of rules to make sure the rules are executed
+if necessary. 
+
+A plug-in always does the following actions:
+
+- create a target 
+.fix tag/feature
+that is the end-target for the feature
+- create a tag 
+.fix tag/clean.feature
+that removes everything that may be installed by the feature
+
+The targets in the tag-directory will depend on 
+.fix |tag
+as last dependency.
+The targets must be touched (there must be a file 
+.fix tag/feature
+that is created)
+
+It is suggested to put a banner above the rules. This allows easier
+scrolling through the Makefile.
+
+For the rest: it is up to the feature to determine whether any additional
+actions should be taken. That can be done based on the presence of certain 
+lines in files, the fact that a specific file is present or because files with
+specific extensions are present.
+
+This means that the simplest
+.fix configyour.feature
+will be:
+.pre
+
+#!/bin/bash
+banner feature >> Makefile
+
+echo 'tag/feature: |tag' >> Makefile
+echo '	touch tag/feature' >> Makefile
+
+echo 'tag/clean.feature: |tag' >> Makefile
+echo '	touch tag/clean.feature' >> Makefile
+
+.pre
+			

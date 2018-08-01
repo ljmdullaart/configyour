@@ -1,0 +1,43 @@
+.header
+
+.h1 Configure.pgm
+
+.h2 Purpose
+
+Configure.pgm creates the make-rules for a configuration and scripts directory.
+There are three actions taken:
+- The creation/update of crontabs
+- Scripts are executed
+- Scripts and files are placed in directories
+
+.h2 Copy script and files
+
+For files that contain a line with 
+.fixed #INSTALL@ filename
+configyour will create rules that copy that file to the destination
+.fixed filename.
+If there is a line
+.fixed #DEPENDENCY ....
+in the file, the dependencies specified on that line will be dependencies in the 
+Makefiile for the copy. The configyour script will make no effort to create rules for the
+dependency, although implicit make rules may help.
+
+A script may also add specific rules to the makefile with  a line containing
+.fixed #MAKERULE <text for in the Makefile>
+which could help with more complex dependencies.
+
+.h2 Cron
+
+Crontabs may be updated 
+with files with the extension
+.fix .cron
+There may be different files that update different crontabs.
+With a line
+.fix #USER <username>
+you can control for which user the crontab will be updated.
+Default user is root.
+The resulting makefile rules will:
+- remove all lines that are tagged with the filename and username
+- tag all lines with the filename and username and add the tagged lines to the crontab
+- create a file with the extension .list to show that the lines are added to the crontab.
+
