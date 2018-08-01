@@ -13,11 +13,12 @@ NOW=`date`
 
 echo "tag/upload.pgm: |tag" >> Makefile
 echo "	touch tag/upload.pgm" >> Makefile
-echo "tag/pgm: tag/pgm.cron tag/pgm.bin |tag" >> Makefile
+echo "tag/pgm: tag/pgm.cron tag/pgm.bin tag/pgm.do_me |tag" >> Makefile
 
 CRONS=`ls *.cron 2>/dev/null | paste -s -d' '`
 PGMS=`grep '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' '`
 PGMSRC=`grep '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' '`
+DO_ME=`grep '^#DO_ME' * 2>/dev/null | cut -d':' -f1 | sort -u | paste -s -d' '`
 
 if [ "$PGMS" = "" ] ; then
 	echo "No programs found to install"
@@ -42,6 +43,7 @@ else
 			echo "	sudo cp $FILE $DEST" >>Makefile
 			case $FILE in
 				(*.sh) DO_CHMOD=yes ;;
+				(*.pgm) DO_CHMOD=yes ;;
 				(*.pl) DO_CHMOD=yes ;;
 				(*.py) DO_CHMOD=yes ;;
 				(*.tcl) DO_CHMOD=yes ;;
@@ -56,6 +58,26 @@ else
 		done
 	done
 fi
+
+if [ "$DO_ME" = "" ] ; then
+	echo "tag/pgm.do_me: Makefile |tag" >> Makefile
+	echo "	touch tag/pgm.do_me" >> Makefile
+else
+	echo -n "tag/pgm.do_me: " >> Makefile
+	for dome in $DO_ME; do
+		echo -n " tag/do_me_$dome "  >> Makefile
+	done
+	echo " Makefile |tag" >> Makefile
+	echo "	touch tag/pgm.do_me" >> Makefile
+	for dome in $DO_ME; do
+		echo  "tag/do_me_$dome: $dome Makefile |tag"  >> Makefile
+		echo "	chmod +x $dome"  >> Makefile
+		echo "	./$dome"  >> Makefile
+		echo "	touch tag/do_me_$dome"  >> Makefile
+	done
+fi
+
+
 
 # Depricated  crontab-only
 if [ -f crontab ] ; then
