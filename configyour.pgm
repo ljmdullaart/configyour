@@ -95,8 +95,9 @@ if [ "$CRONS" = "" ] ; then
 	echo "	touch tag/pgm.cron" >> Makefile
 else
 	for FILE in $CRONS ; do
-		USER=root
-		grep '^#USER' $FILE | while read TAG USER ; do :; done
+		echo -n CRONTAB $FILE
+		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
+		echo " for user $USER"
 		if [ "$USER" = "" ] ; then user=ROOT ; fi
 		echo "$FILE.lst: $FILE"  >>Makefile
 		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
@@ -124,8 +125,7 @@ if [ "$CRONS" = "" ] ; then
 	echo "No crons to clean-up"
 else
 	for FILE in $CRONS ; do
-		USER=root
-		grep '^#USER' $FILE | while read TAG USER ; do :; done
+		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
 		if [ "$USER" = "" ] ; then user=ROOT ; fi
 		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
 		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
