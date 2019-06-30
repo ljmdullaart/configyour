@@ -19,7 +19,7 @@ configyour will create rules that copy that file to the destination
 If there is a line
 .fix #DEPENDENCY ....
 in the file, the dependencies specified on that line will be dependencies in the 
-Makefiile for the copy. The configyour script will make no effort to create rules for the
+Makefile for the copy. The configyour script will make no effort to create rules for the
 dependency, although implicit make rules may help.
 
 A script may also add specific rules to the makefile with  a line containing
@@ -41,3 +41,11 @@ The resulting makefile rules will:
 - tag all lines with the filename and username and add the tagged lines to the crontab
 - create a file with the extension .list to show that the lines are added to the crontab.
 
+.h2 Do me
+
+Sometimes, more elaborate installation scripts are required. Such an instalation
+script can be marked with 
+.pre
+ #DO_ME
+.pre
+in the script. 
