@@ -8,17 +8,15 @@ while read FILE INSTALLAT DEST ; do
 	echo "$INSTALLAT : copy $FILE to $DEST"
 done
 
-
-NOW=`date`
-
 echo "tag/upload.pgm: |tag" >> Makefile
 echo "	touch tag/upload.pgm" >> Makefile
 echo "tag/pgm: tag/pgm.cron tag/pgm.bin tag/pgm.do_me |tag" >> Makefile
 
-CRONS=`ls *.cron 2>/dev/null | paste -s -d' '`
-PGMS=`grep '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' '`
-PGMSRC=`grep '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' '`
-DO_ME=`grep '^#DO_ME' * 2>/dev/null | cut -d':' -f1 | sort -u | paste -s -d' '`
+CRONS=$(ls *.cron 2>/dev/null | paste -s -d' ')
+PGMS=$(grep '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' ')
+PGMSRC=$(grep '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' ')
+DO_ME=$(grep '^#DO_ME' * 2>/dev/null | cut -d':' -f1 | sort -u | paste -s -d' ')
+
 
 if [ "$PGMS" = "" ] ; then
 	echo "No programs found to install"
@@ -32,10 +30,10 @@ else
 	
 	
 	for FILE in $PGMSRC ; do
-		sed -n 's/^#INSTALL@ *//p' $FILE | grep -v @ |
-		while read DEST ; do
+		sed -n 's/^#INSTALL@ *//p' "$FILE" | grep -v @ |
+		while read -r  DEST ; do
 			echo -n "$DEST: $FILE  Makefile " >> Makefile
-			if grep '^#DEP' $FILE ; then
+			if grep '^#DEP' "$FILE" ; then
 				sed -n 's/^#DEP[A-Z]* *//p' | paste -s -d' '  >> Makefile
 			else
 				echo "" >> Makefile
@@ -52,7 +50,7 @@ else
 			if [ $DO_CHMOD = yes ] ; then
 				echo "	sudo chmod a+rx $DEST" >> Makefile
 			fi
-			if grep '^#MAKERULE' $FILE ; then
+			if grep '^#MAKERULE' "$FILE" ; then
 				sed -n 's/^#MAKERULE[ 	]*/	/p'  >> Makefile
 			fi
 		done
@@ -95,10 +93,9 @@ if [ "$CRONS" = "" ] ; then
 	echo "	touch tag/pgm.cron" >> Makefile
 else
 	for FILE in $CRONS ; do
-		echo -n CRONTAB $FILE
+		echo -n "CRONTAB $FILE"
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
-		echo " for user $USER"
-		if [ "$USER" = "" ] ; then user=ROOT ; fi
+		if [ "$USER" = "" ] ; then USER=ROOT ; fi
 		echo "$FILE.lst: $FILE"  >>Makefile
 		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
 		echo "	awk '{printf(\"%-100s  #--$FILE:$USER\\n\", \$\$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
@@ -126,12 +123,11 @@ if [ "$CRONS" = "" ] ; then
 else
 	for FILE in $CRONS ; do
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
-		if [ "$USER" = "" ] ; then user=ROOT ; fi
+		if [ "$USER" = "" ] ; then USER=ROOT ; fi
 		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
 		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
 		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
 	done
-	NOCLEAN=0
 fi
 echo '	touch tag/clean.pgm' >> Makefile
 			
