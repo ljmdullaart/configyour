@@ -1,11 +1,21 @@
 #!/bin/bash
 #INSTALL@ /usr/local/bin/configyour.pgm
+DEBUG=1
+tell(){
+	if [ $DEBUG -gt 0 ] ; then
+		echo "	$*"
+	fi
+}
+
+if [ "$1" = "-d" ] ; then
+	DEBUG=1
+fi
 
 banner pgm >> Makefile
 
 grep '^#INSTALL@' * 2>/dev/null  | tr ':' ' ' | grep -v ~|
 while read FILE INSTALLAT DEST ; do
-	echo "$INSTALLAT : copy $FILE to $DEST"
+	tell "$INSTALLAT : copy $FILE to $DEST"
 done
 
 echo "tag/upload.pgm: |tag" >> Makefile
@@ -13,18 +23,32 @@ echo "	touch tag/upload.pgm" >> Makefile
 echo "tag/pgm: tag/pgm.cron tag/pgm.bin tag/pgm.do_me |tag" >> Makefile
 
 CRONS=$(ls *.cron 2>/dev/null | paste -s -d' ')
+tell "CRONS $CRONS"
 PGMS=$(grep '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' ')
+tell "PGMS: $PGMS"
 PGMSRC=$(grep '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' ')
+tell "SOURCES: $PGMSRC"
+REMOTES=$(grep '^#REMOTE@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' ')
+tell "REMOTES: $REMOTES"
 DO_ME=$(grep '^#DO_ME' * 2>/dev/null | cut -d':' -f1 | sort -u | paste -s -d' ')
+tell "DO ME: $DO_ME"
 
+echo ".PHONY: pgm" >> Makefile
+echo "pgm: tag/pgm" >> Makefile
 
-if [ "$PGMS" = "" ] ; then
+if [ "$PGMS.$REMOTES" = "." ] ; then
 	echo "No programs found to install"
 	echo "tag/pgm.bin: Makefile |tag" >> Makefile
 	echo "	touch tag/pgm.bin" >> Makefile
 
 else
-	echo "tag/pgm.bin: $PGMS |tag" >> Makefile
+	echo -n "tag/pgm.bin: $PGMS " >> Makefile
+	for FILE in $REMOTES ; do
+		echo -n "tag/$FILE " >> Makefile
+	done
+
+	echo " |tag" >> Makefile
+
 	echo "	touch tag/pgm.bin" >> Makefile
 	echo "" >> Makefile
 	
@@ -32,6 +56,7 @@ else
 	for FILE in $PGMSRC ; do
 		sed -n 's/^#INSTALL@ *//p' "$FILE" | grep -v @ |
 		while read -r  DEST ; do
+			tell "$DEST: $FILE"
 			echo -n "$DEST: $FILE  Makefile " >> Makefile
 			if grep '^#DEP' "$FILE" ; then
 				sed -n 's/^#DEP[A-Z]* *//p' | paste -s -d' '  >> Makefile
@@ -55,6 +80,34 @@ else
 			fi
 		done
 	done
+	for FILE in $REMOTES ; do
+		sed -n 's/^#REMOTE@ *//p' "$FILE" | grep -v @ |
+		while read -r HOST  DEST ; do
+			tell "Remote: $HOST $DEST"
+			echo -n "tag/$FILE: $FILE  Makefile " >> Makefile
+			if grep '^#DEP' "$FILE" ; then
+				sed -n 's/^#DEP[A-Z]* *//p' | paste -s -d' '  >> Makefile
+			else
+				echo "" >> Makefile
+			fi
+			echo "	scp $FILE root@$HOST:$DEST" >>Makefile
+			case $FILE in
+				(*.sh) DO_CHMOD=yes ;;
+				(*.pgm) DO_CHMOD=yes ;;
+				(*.pl) DO_CHMOD=yes ;;
+				(*.py) DO_CHMOD=yes ;;
+				(*.tcl) DO_CHMOD=yes ;;
+				(*) DO_CHMOD=no ;;
+			esac
+			if [ $DO_CHMOD = yes ] ; then
+				echo "	ssh root@$HOST chmod a+rx $DEST" >> Makefile
+			fi
+			echo "	touch tag/$FILE" >>Makefile
+			if grep '^#MAKERULE' "$FILE" ; then
+				sed -n 's/^#MAKERULE[ 	]*/	/p'  >> Makefile
+			fi
+		done
+	done
 fi
 
 if [ "$DO_ME" = "" ] ; then
@@ -63,6 +116,7 @@ if [ "$DO_ME" = "" ] ; then
 else
 	echo -n "tag/pgm.do_me: " >> Makefile
 	for dome in $DO_ME; do
+		tell "do me: $dome"
 		echo -n " tag/do_me_$dome "  >> Makefile
 	done
 	echo " Makefile |tag" >> Makefile
@@ -93,15 +147,26 @@ if [ "$CRONS" = "" ] ; then
 	echo "	touch tag/pgm.cron" >> Makefile
 else
 	for FILE in $CRONS ; do
-		echo -n "CRONTAB $FILE"
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
+		tell "CRONTAB $FILE $USER"
 		if [ "$USER" = "" ] ; then USER=ROOT ; fi
 		echo "$FILE.lst: $FILE"  >>Makefile
-		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
-		echo "	awk '{printf(\"%-100s  #--$FILE:$USER\\n\", \$\$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
-		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
-		echo "	sudo rm -f /tmp/cr-$USER"                                                            >>Makefile
-		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
+		if [[ $USER == *@* ]] ; then
+			RUSER=${USER%@*}
+			RHOST=${USER#*@}
+			tell "remote cron at $RHOST for $RUSER"
+			echo "	- ssh root@$RHOST crontab -u $RUSER -l | grep -v '#--$FILE:$RUSER'              > /tmp/cr-$USER"  >>Makefile
+			echo "	awk '{printf(\"%-100s  #--$FILE:$RUSER\\n\", \$\$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
+			echo "	cat /tmp/cr-$USER| ssh $RHOST sudo crontab -u $RUSER -"                                                 >>Makefile
+			echo "	rm -f /tmp/cr-$USER"                                                            >>Makefile
+			echo "	ssh root@$RHOST crontab -u $RUSER -l | grep '#--$FILE:$RUSER' > $FILE.lst"                        >>Makefile
+		else
+			echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
+			echo "	awk '{printf(\"%-100s  #--$FILE:$USER\\n\", \$\$0) }' $FILE   >> /tmp/cr-$USER"  >>Makefile
+			echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
+			echo "	sudo rm -f /tmp/cr-$USER"                                                            >>Makefile
+			echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
+		fi
 	done
 	echo -n "tag/pgm.cron: Makefile ">> Makefile
 	for FILE in $CRONS ; do
