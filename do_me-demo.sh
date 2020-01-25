@@ -1,6 +1,6 @@
 #!/bin/bash
 #DO_ME
 
-banner "do   me"
-banner "demo"
+my_banner "do   me"
+my_banner "demo"
 sleep 2

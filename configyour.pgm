@@ -1,17 +1,24 @@
 #!/bin/bash
 #INSTALL@ /usr/local/bin/configyour.pgm
 DEBUG=1
+LOG=configyour.log
+echo "$0 starting" >> $LOG
 tell(){
 	if [ $DEBUG -gt 0 ] ; then
-		echo "	$*"
+		echo "	$*" >> $LOG
 	fi
 }
 
 if [ "$1" = "-d" ] ; then
 	DEBUG=1
 fi
+if [ -x /usr/local/bin/my_banner ] ; then
+	banner=/usr/local/bin/my_banner
+else
+	banner=banner
+fi
 
-banner pgm >> Makefile
+$banner pgm >> Makefile
 
 grep '^#INSTALL@' * 2>/dev/null  | tr ':' ' ' | grep -v ~|
 while read FILE INSTALLAT DEST ; do
@@ -37,7 +44,7 @@ echo ".PHONY: pgm" >> Makefile
 echo "pgm: tag/pgm" >> Makefile
 
 if [ "$PGMS.$REMOTES" = "." ] ; then
-	echo "No programs found to install"
+	echo "No programs found to install" >> $LOG
 	echo "tag/pgm.bin: Makefile |tag" >> Makefile
 	echo "	touch tag/pgm.bin" >> Makefile
 
@@ -179,12 +186,12 @@ fi
 
 echo 'tag/clean.pgm:' >> Makefile
 if [ "$PGMS" = "" ] ; then
-	echo "No pgms to cleanup"
+	echo "No pgms to cleanup" >> $LOG
 else
 	echo "	sudo rm -f $PGMS" >> Makefile
 fi
 if [ "$CRONS" = "" ] ; then
-	echo "No crons to clean-up"
+	echo "No crons to clean-up" >> $LOG
 else
 	for FILE in $CRONS ; do
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)

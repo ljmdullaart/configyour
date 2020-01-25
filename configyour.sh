@@ -1,19 +1,31 @@
 #!/bin/bash
 #INSTALL@ /usr/local/bin/configyour
 
+
 NOW=`date`
+LOG=configyour.log
+date > $LOG
+
 CONFIGURES=/tmp/configyour.$$
 BIN=/usr/local/bin
 if [ "$1" = "-l" ] ; then
 	BIN=.
+	echo "Bin -l flag; using . as bin directoy" >>$LOG
 fi
+if [ -x /usr/local/bin/my_banner ] ; then
+    banner=/usr/local/bin/my_banner
+else
+    banner=banner
+fi
+
+
 
 ls $BIN/configyour.* | sed 's/.*onfigyour.//' | grep -v sh > $CONFIGURES 2>/dev/null
 
-banner configyour
+$banner configyour
 
-echo "Doing $CONFIGURES"
-cat $CONFIGURES
+echo "Doing $CONFIGURES"  >>$LOG
+cat $CONFIGURES >>$LOG
 
 if [ "$1" = "-h" ] ; then
 cat <<EOF
@@ -35,15 +47,7 @@ exit 0
 fi
 
 
-if [ -f configure ] ; then
-	echo "# Local configure file found executing that"
-	./configure
-	exit 0
-fi
-
-
-
-echo "BIN=$BIN"
+echo "BIN=$BIN" >>$LOG
 
 # Header and top-rules
 echo "# Makefile $NOW" > Makefile
@@ -78,12 +82,13 @@ echo "tag:">>Makefile
 echo "	test -d tag || mkdir tag" >> Makefile
 
 cat $CONFIGURES | while read type ; do
-	ls -l $BIN/configyour.$type
+	ls -l $BIN/configyour.$type >>$LOG
 done
 
 for type in `cat $CONFIGURES | paste -sd' '` ; do
 	echo "# $type" >> Makefile
-	banner $type
+	$banner $type
+	echo '************************************************************************' >>$LOG
 	bash $BIN/configyour.$type
 done
 
