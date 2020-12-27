@@ -22,6 +22,13 @@ $banner pgm >> Makefile
 
 grep '^#INSTALL@' * 2>/dev/null  | tr ':' ' ' | grep -v ~|
 while read FILE INSTALLAT DEST ; do
+	#file : copy Binary to dircnt matches
+	if [ "$FILE" = "Binary" ] ; then
+		FILE=${DEST% matches}
+		nwline=$(strings $FILE |grep '^#INSTALL@')
+		INSTALLAT='#INSTALL@'
+		DEST=${nwline#* }
+	fi
 	tell "$INSTALLAT : copy $FILE to $DEST"
 done
 
@@ -44,7 +51,7 @@ echo ".PHONY: pgm" >> Makefile
 echo "pgm: tag/pgm" >> Makefile
 
 if [ "$PGMS.$REMOTES" = "." ] ; then
-	echo "No programs found to install" >> $LOG
+	echo "No programs found to install"
 	echo "tag/pgm.bin: Makefile |tag" >> Makefile
 	echo "	touch tag/pgm.bin" >> Makefile
 
@@ -186,12 +193,12 @@ fi
 
 echo 'tag/clean.pgm:' >> Makefile
 if [ "$PGMS" = "" ] ; then
-	echo "No pgms to cleanup" >> $LOG
+	echo "No pgms to cleanup"
 else
 	echo "	sudo rm -f $PGMS" >> Makefile
 fi
 if [ "$CRONS" = "" ] ; then
-	echo "No crons to clean-up" >> $LOG
+	echo "No crons to clean-up"
 else
 	for FILE in $CRONS ; do
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
