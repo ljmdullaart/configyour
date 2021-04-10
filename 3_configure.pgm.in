@@ -6,6 +6,7 @@
 
 Configure.pgm creates the make-rules for a configuration and scripts directory.
 There are three actions taken:
+
 - The creation/update of crontabs
 - Scripts are executed
 - Scripts and files are placed in directories
@@ -37,6 +38,7 @@ With a line
 you can control for which user the crontab will be updated.
 Default user is root.
 The resulting makefile rules will:
+
 - remove all lines that are tagged with the filename and username
 - tag all lines with the filename and username and add the tagged lines to the crontab
 - create a file with the extension .list to show that the lines are added to the crontab.

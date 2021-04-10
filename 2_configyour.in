@@ -64,8 +64,8 @@ specific extensions are present.
 This means that the simplest
 .fix configyour.feature
 will be:
-.pre
 
+.pre
 #!/bin/bash
 banner feature >> Makefile
 
@@ -82,3 +82,4 @@ Because
 is not standardized,
 .fix figlet feature | sed 's/^/s//# /'
 can also be used.
+
