@@ -73,7 +73,7 @@ else
 			tell "$DEST: $FILE"
 			echo -n "$DEST: $FILE  Makefile " >> Makefile
 			if grep '^#DEP' "$FILE" ; then
-				sed -n 's/^#DEP[A-Z]* *//p' | paste -s -d' '  >> Makefile
+				sed -n 's/^#DEP[A-Z]* *//p' $FILE | paste -s -d' '  >> Makefile
 			else
 				echo "" >> Makefile
 			fi
@@ -100,7 +100,7 @@ else
 			tell "Remote: $HOST $DEST"
 			echo -n "tag/$FILE: $FILE  Makefile " >> Makefile
 			if grep '^#DEP' "$FILE" ; then
-				sed -n 's/^#DEP[A-Z]* *//p' | paste -s -d' '  >> Makefile
+				sed -n 's/^#DEP[A-Z]* *//p' $FILE | paste -s -d' '  >> Makefile
 			else
 				echo "" >> Makefile
 			fi
