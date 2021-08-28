@@ -22,10 +22,26 @@ If there is a line
 in the file, the dependencies specified on that line will be dependencies in the 
 Makefile for the copy. The configyour script will make no effort to create rules for the
 dependency, although implicit make rules may help.
+An example could be
+
+.pre
+#DEPENDENCY tag/pgm.do_me
+.pre
+
+This would force the DO_ME to run before this file is done.
 
 A script may also add specific rules to the makefile with  a line containing
 .fix #MAKERULE <text for in the Makefile>
 which could help with more complex dependencies.
+
+As an example:
+
+.pre
+#DEPENDENCY touchfile
+#MAKERULE touchfile:
+#MAKERULE       touch touchfile
+.pre
+
 
 .h2 Cron
 
@@ -37,6 +53,10 @@ With a line
 .fix #USER <username>
 you can control for which user the crontab will be updated.
 Default user is root.
+The user can be in the form of
+.fix user@host
+and that means that configyour will create makerules with ssh 
+to set the crontab for that user on that host.
 The resulting makefile rules will:
 
 - remove all lines that are tagged with the filename and username
