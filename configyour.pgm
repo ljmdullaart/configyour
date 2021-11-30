@@ -89,6 +89,14 @@ else
 			if [ $DO_CHMOD = yes ] ; then
 				echo "	sudo chmod a+rx $DEST" >> Makefile
 			fi
+			if grep '^#CHOWN' "$FILE" ; then
+				own=$(sed -n 's/^#CHOWN[: 	]*//p')
+				echo "	sudo chown $own  $DEST" >> Makefile
+			fi
+			if grep '^#CHMOD' "$FILE" ; then
+				perm=$(sed -n 's/^#CHMOD[: 	]*//p')
+				echo "	sudo chmod $perm $DEST" >> Makefile
+			fi
 			if grep '^#MAKERULE' "$FILE" ; then
 				sed -n 's/^#MAKERULE[ 	]*/	/p'  >> Makefile
 			fi
@@ -115,6 +123,14 @@ else
 			esac
 			if [ $DO_CHMOD = yes ] ; then
 				echo "	ssh root@$HOST chmod a+rx $DEST" >> Makefile
+			fi
+			if grep '^#CHOWN' "$FILE" ; then
+				own=$(sed -n 's/^#CHOWN[: 	]*//p')
+				echo "	ssh root@$HOST chown $own  $DEST" >> Makefile
+			fi
+			if grep '^#CHMOD' "$FILE" ; then
+				perm=$(sed -n 's/^#CHMOD[: 	]*//p')
+				echo "	ssh root@$HOSssh root@$HOST chmod $perm $DEST" >> Makefile
 			fi
 			echo "	touch tag/$FILE" >>Makefile
 			if grep '^#MAKERULE' "$FILE" ; then

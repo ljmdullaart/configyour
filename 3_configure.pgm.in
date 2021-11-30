@@ -17,6 +17,14 @@ For files that contain a line with
 .fix #INSTALL@ filename
 configyour will create rules that copy that file to the destination
 .fix filename.
+
+Specific owner and filemode can be set with 
+
+.pre
+#CHOWN username
+#CHMOD <permission>
+.pre
+
 If there is a line
 .fix #DEPENDENCY ....
 in the file, the dependencies specified on that line will be dependencies in the 
@@ -28,19 +36,11 @@ An example could be
 #DEPENDENCY tag/pgm.do_me
 .pre
 
-This would force the DO_ME to run before this file is done.
+This would force the DO_ME to run before this file is handled.
 
 A script may also add specific rules to the makefile with  a line containing
 .fix #MAKERULE <text for in the Makefile>
 which could help with more complex dependencies.
-
-As an example:
-
-.pre
-#DEPENDENCY touchfile
-#MAKERULE touchfile:
-#MAKERULE       touch touchfile
-.pre
 
 
 .h2 Cron
