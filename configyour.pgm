@@ -1,4 +1,5 @@
 #!/bin/bash
+#INSTALLEDFROM verlaine:/home/ljm/src/configyour
 #INSTALL@ /usr/local/bin/configyour.pgm
 DEBUG=1
 LOG=configyour.log
@@ -38,13 +39,15 @@ echo "tag/pgm: tag/pgm.cron tag/pgm.bin tag/pgm.do_me |tag" >> Makefile
 
 CRONS=$(ls *.cron 2>/dev/null | paste -s -d' ')
 tell "CRONS $CRONS"
-PGMS=$(grep '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' ')
+PGMS=$(grep -a '^#INSTALL@' * 2>/dev/null | cut -d' ' -f2  | grep -v @ | sort -u | paste -s -d' ')
 tell "PGMS: $PGMS"
-PGMSRC=$(grep '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' ')
+PGMSRC=$(grep -a '^#INSTALL@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' ')
 tell "SOURCES: $PGMSRC"
 REMOTES=$(grep '^#REMOTE@' * 2>/dev/null | cut -d':' -f1  | grep -v @ | sort -u | paste -s -d' ')
 tell "REMOTES: $REMOTES"
 DO_ME=$(grep '^#DO_ME' * 2>/dev/null | cut -d':' -f1 | sort -u | paste -s -d' ')
+tell "DO ME: $DO_ME"
+CLEAN_ME=$(grep '^#CLEAN_ME' * 2>/dev/null | cut -d':' -f1 | sort -u | paste -s -d' ')
 tell "DO ME: $DO_ME"
 
 echo ".PHONY: pgm" >> Makefile
@@ -67,7 +70,9 @@ else
 	echo "" >> Makefile
 	
 	
+
 	for FILE in $PGMSRC ; do
+		installedfrom $FILE
 		sed -n 's/^#INSTALL@ *//p' "$FILE" | grep -v @ |
 		while read -r  DEST ; do
 			tell "$DEST: $FILE"
@@ -103,6 +108,7 @@ else
 		done
 	done
 	for FILE in $REMOTES ; do
+		installedfrom $FILE
 		sed -n 's/^#REMOTE@ *//p' "$FILE" | grep -v @ |
 		while read -r HOST  DEST ; do
 			tell "Remote: $HOST $DEST"
@@ -152,9 +158,13 @@ else
 	echo " Makefile |tag" >> Makefile
 	echo "	touch tag/pgm.do_me" >> Makefile
 	for dome in $DO_ME; do
-		echo  "tag/do_me_$dome: $dome Makefile |tag"  >> Makefile
+		dep=''
+		if grep -q '^#DEP ' $dome ; then
+			dep=$(sed -n 's/^#DEP //p' $dome | paste -sd' ')
+		fi
+		echo "tag/do_me_$dome: $dome $dep  Makefile |tag"  >> Makefile
 		echo "	chmod +x $dome"  >> Makefile
-		echo "	./$dome"  >> Makefile
+		echo "	./$dome DO_ME"  >> Makefile
 		echo "	touch tag/do_me_$dome"  >> Makefile
 	done
 fi
@@ -221,7 +231,15 @@ else
 		if [ "$USER" = "" ] ; then USER=ROOT ; fi
 		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
 		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
-		echo "	sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                        >>Makefile
+		echo "	- sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                      >>Makefile
+	done
+fi
+if [ "$CLEAN_ME" = "" ] ; then
+	echo "No clean-up programs"
+else
+	for cleanme in $CLEAN_ME; do
+		echo "	chmod +x $cleanme"  >> Makefile
+		echo "	./$cleanme CLEAN_ME"  >> Makefile
 	done
 fi
 echo '	touch tag/clean.pgm' >> Makefile

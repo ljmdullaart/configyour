@@ -1,4 +1,5 @@
 #!/bin/bash
+#INSTALLEDFROM verlaine:/home/ljm/src/configyour
 #INSTALL@ /usr/local/bin/configyour
 
 

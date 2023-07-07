@@ -1,4 +1,5 @@
 #!/bin/bash
+#INSTALLEDFROM verlaine:/home/ljm/src/configyour
 #INSTALL@ /usr/local/bin/configyour.feature
 if [ -x /usr/local/bin/my_banner ] ; then
     banner=/usr/local/bin/my_banner
