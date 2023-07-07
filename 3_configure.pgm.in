@@ -26,14 +26,14 @@ Specific owner and filemode can be set with
 .pre
 
 If there is a line
-.fix #DEPENDENCY ....
+.fix #DEP....
 in the file, the dependencies specified on that line will be dependencies in the 
 Makefile for the copy. The configyour script will make no effort to create rules for the
 dependency, although implicit make rules may help.
 An example could be
 
 .pre
-#DEPENDENCY tag/pgm.do_me
+#DEP tag/pgm.do_me
 .pre
 
 This would force the DO_ME to run before this file is handled.
