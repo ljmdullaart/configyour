@@ -189,6 +189,7 @@ else
 	for FILE in $CRONS ; do
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
 		tell "CRONTAB $FILE $USER"
+		touch $FILE
 		if [ "$USER" = "" ] ; then USER=ROOT ; fi
 		echo "$FILE.lst: $FILE"  >>Makefile
 		if [[ $USER == *@* ]] ; then
@@ -228,10 +229,20 @@ if [ "$CRONS" = "" ] ; then
 else
 	for FILE in $CRONS ; do
 		USER=$(sed -n 's/^#USER *//p' $FILE | tail -1)
-		if [ "$USER" = "" ] ; then USER=ROOT ; fi
-		echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"  >>Makefile
-		echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                 >>Makefile
-		echo "	- sudo crontab -u $USER -l | grep '#--$FILE:$USER' > $FILE.lst"                      >>Makefile
+		if [[ $USER == *@* ]] ; then
+			RUSER=${USER%@*}
+			RHOST=${USER#*@}
+			tell "remote cron at $RHOST for $RUSER"
+			echo "	- ssh root@$RHOST crontab -u $RUSER -l | grep -v '#--$FILE:$RUSER' > /tmp/cr-$USER"    >>Makefile
+			echo "	cat /tmp/cr-$USER| ssh $RHOST sudo crontab -u $RUSER -"                                >>Makefile
+			echo "	- ssh root@$RHOST crontab -u $RUSER -l | grep '#--$FILE:$RUSER'    > $FILE.lst"        >>Makefile
+		else
+	
+			if [ "$USER" = "" ] ; then USER=ROOT ; fi
+			echo "	- sudo crontab -u $USER -l | grep -v '#--$FILE:$USER'              > /tmp/cr-$USER"    >>Makefile
+			echo "	sudo crontab -u $USER /tmp/cr-$USER"                                                   >>Makefile
+			echo "	- sudo crontab -u $USER -l | grep '#--$FILE:$USER'                 > $FILE.lst"        >>Makefile
+		fi
 	done
 fi
 if [ "$CLEAN_ME" = "" ] ; then
