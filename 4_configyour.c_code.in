@@ -1,0 +1,91 @@
+.header
+
+.h1 configyour.c_code
+
+.h2 Purpose
+
+For simple c programs, configyour is able to create the rules for the
+.fixed Makefile.
+
+The requirements are, that all files are in the same directory, and that there
+is at least one file with a 
+.fixed #INSTALL_C@
+in it. At least one file must have a
+.fixed .c
+extension.
+
+.h2 Directives
+
+The following directives are used by
+.fixed configyour.pgm
+and they must apear at the beginning of a line.
+
+|---------------------------------------------------------------|
+| .b Directive     | .b Meaning                                 |
+|---------------------------------------------------------------|
+|                  |                                            |
+| #INSTALL_C@      | Install the compiled C program here        |
+|---------------------------------------------------------------|
+| #DEP             | The C program has these dependecies        |
+|---------------------------------------------------------------|
+| #MAKE            | This rule is used to make the program      |
+|                  | instead of standard rules                  |
+|---------------------------------------------------------------|
+
+In addition,
+.fixed configyour.pgm
+will check if there is a declaration of
+.fixed main()
+and will try to create applicable rules, unless explicit rules are given.
+
+.h2 Example
+
+As a simple example, see this 
+.fixed Hello, World!
+program.
+
+.pre
+#include <stdio.h>
+
+/*
+#INSTALL_C@ /usr/local/bin/hello_world
+#INSTALLEDFROM verlaine:/home/ljm/src/configyour
+#DEP nothing.o
+*/
+
+int main() {
+    printf("Hello, World!\n");
+    return 0;
+}
+.pre
+
+An additional
+.fixed nothing.c
+contains:
+
+.pre
+int nothing(){
+	/* nothing */
+}
+.pre
+
+This will create the following rules:
+
+.pre
+# c_code
+#                        _      
+#   ___     ___ ___   __| | ___ 
+#  / __|   / __/ _ \ / _` |/ _ \
+# | (__   | (_| (_) | (_| |  __/
+#  \___|___\___\___/ \__,_|\___|
+#     |_____|                   
+tag/c_hello: hello
+	sudo cp hello /usr/local/bin/hello_world
+hello: hello.c nothing.o
+nothing.o: nothing.c 
+tag/c_code:  tag/c_hello |tag
+	touch tag/c_code
+tag/clean.c_code: |tag
+	rm -f  /usr/local/bin/hello_world
+	touch tag/clean.c_code
+.pre
