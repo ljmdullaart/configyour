@@ -1,9 +1,9 @@
 #!/bin/bash
-#INSTALLEDFROM verlaine:/home/ljm/src/configyour
 #INSTALL@ /usr/local/bin/configyour
+#INSTALLEDFROM verlaine:/home/ljm/src/configyour
 
 
-NOW=`date`
+NOW=$(date)
 LOG=configyour.log
 date > $LOG
 
@@ -58,14 +58,14 @@ fi
 
 # All-target
 echo -n 'ALL: tag' >> Makefile
-cat $CONFIGURES | while read type ; do
+cat "$CONFIGURES" | while read -r type ; do
 	echo -n " tag/$type" >> Makefile
 done
 echo "" >>Makefile
 
 # Clean-target
 echo -n 'clean:' >> Makefile
-cat $CONFIGURES | while read type ; do
+cat "$CONFIGURES" | while read -r type ; do
 	echo -n " tag/clean.$type" >> Makefile
 done
 echo "" >>Makefile
@@ -73,7 +73,7 @@ echo "	rm -rf tag" >>Makefile
 
 #upload-target
 echo -n 'upload:' >> Makefile
-cat $CONFIGURES | while read type ; do
+cat "$CONFIGURES" | while read -r  type ; do
 	echo -n " tag/upload.$type" >> Makefile
 done
 echo "" >>Makefile
@@ -82,15 +82,15 @@ echo "" >>Makefile
 echo "tag:">>Makefile
 echo "	test -d tag || mkdir tag" >> Makefile
 
-cat $CONFIGURES | while read type ; do
-	ls -l $BIN/configyour.$type >>$LOG
+cat "$CONFIGURES" | while read -r type ; do
+	ls -l "$BIN/configyour.$type" >>"$LOG"
 done
 
-for type in `cat $CONFIGURES | paste -sd' '` ; do
+for type in $(cat $CONFIGURES | paste -sd' ') ; do
 	echo "# $type" >> Makefile
-	$banner $type
+	$banner "$type"
 	echo '************************************************************************' >>$LOG
-	bash $BIN/configyour.$type
+	bash "$BIN/configyour.$type"
 done
 
 
